@@ -1,0 +1,12 @@
+{
+  "name": "phpple/altable",
+  "autoload": {
+    "psr-4": {
+      "Phpple\\Altable\\": "./src",
+      "Phpple\\Altable\\Tests\\": "./tests"
+    }
+  },
+  "require": {
+    "phpunit/phpunit": "^6"
+  }
+}
