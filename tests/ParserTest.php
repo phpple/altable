@@ -31,6 +31,16 @@ class ParserTest extends TestCase
         $this->parser = new Parser();
     }
 
+    /**
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage parser.fileNotReadable
+     */
+    public function testFileNotReadable()
+    {
+        $file = __DIR__.'/notexisted.sql';
+        $this->parser->parse($file);
+    }
+
     public function testCompile()
     {
         $file = __DIR__ . '/dump.sql';
@@ -64,10 +74,10 @@ class ParserTest extends TestCase
         $this->assertEquals(1, count($dbs[0]->tables));
         $this->assertEquals('u_user', $dbs[0]->tables[0]->name);
         $this->assertEquals('id', $dbs[0]->tables[0]->fields[0]->name);
-        $this->assertTrue($dbs[0]->tables[0]->fields[0]->primaryKey);
+        $this->assertTrue($dbs[0]->tables[0]->fields[0]->pk);
         $this->assertEquals('del_flag', $dbs[0]->tables[0]->fields[8]->name);
-        $this->assertFalse($dbs[0]->tables[0]->fields[8]->primaryKey);
-        $this->assertTrue($dbs[0]->tables[0]->fields[8]->notNull);
+        $this->assertFalse($dbs[0]->tables[0]->fields[8]->pk);
+        $this->assertTrue($dbs[0]->tables[0]->fields[8]->notnull);
         $this->assertContains('tinyint', $dbs[0]->tables[0]->fields[8]->type);
     }
 
@@ -137,13 +147,79 @@ class ParserTest extends TestCase
 
     public function testParseField()
     {
+        // 普通字段
         $line = '  `uname` varchar(36) NOT NULL COMMENT \'用户名\',';
         $field = $this->parser->detectPrefix(Parser::PREFIX_FIELD, $line);
         $this->assertEquals('uname', $field->name);
+        $this->assertEquals('varchar', $field->type);
+        $this->assertEquals(36, $field->length);
+        $this->assertTrue($field->notnull);
+        $this->assertFalse($field->unsigned);
+        $this->assertEquals('用户名', $field->comment);
+        $this->assertFalse($field->autoinc);
 
+        // notnull，autoincrement
+        $line = '  `uid` int(10) unsigned NOT NULL AUTO_INCREMENT,';
+        $field = $this->parser->detectPrefix(Parser::PREFIX_FIELD, $line);
+        $this->assertTrue($field->notnull);
+        $this->assertTrue($field->autoinc);
+
+        // 错误解析
         $line = '  `uname` varchar(36) NOT COMMENT \'用户名\',';
         $field = $this->parser->detectPrefix(Parser::PREFIX_FIELD, $line);
         $this->assertNull($field);
+
+        // charset
+        $line = '  `template_value` mediumtext CHARACTER SET utf8mb4 NOT NULL COMMENT \'配置项json\',';
+        $field = $this->parser->detectPrefix(Parser::PREFIX_FIELD, $line);
+        $this->assertEquals('utf8mb4', $field->charset);
+        $this->assertTrue($field->notnull);
+        $this->assertEquals('配置项json', $field->comment);
+
+        // collate
+        $line = '  `domain` varchar(32) COLLATE utf8_bin NULL COMMENT \'域名\',';
+        $field = $this->parser->detectPrefix(Parser::PREFIX_FIELD, $line);
+        $this->assertEquals('utf8_bin', $field->collate);
+        $this->assertEquals('域名', $field->comment);
+        $this->assertFalse($field->notnull);
+
+        // onupdate
+        $line = '  `start_time` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),';
+        $field = $this->parser->detectPrefix(Parser::PREFIX_FIELD, $line);
+        $this->assertEquals('CURRENT_TIMESTAMP(6)', $field->default);
+        $this->assertEquals(6, $field->length);
+        $this->assertEquals('CURRENT_TIMESTAMP(6)', $field->onupdate);
+
+        // enum类型
+        $line = "  `ssl_type` enum('','ANY','X509','SPECIFIED') CHARACTER SET utf8 NOT NULL DEFAULT '',";
+        $field = $this->parser->detectPrefix(Parser::PREFIX_FIELD, $line);
+        $this->assertEquals('enum', $field->type);
+        $this->assertEquals(['', 'ANY', 'X509', 'SPECIFIED'], $field->options);
+        $this->assertEquals('utf8', $field->charset);
+        $this->assertEquals('', $field->default);
+
+        // set类型
+        $line = "  `Column_priv` set('Select','Insert','Update','References') CHARACTER SET utf8 NOT NULL DEFAULT '',";
+        $field = $this->parser->detectPrefix(Parser::PREFIX_FIELD, $line);
+        $this->assertEquals('set', $field->type);
+        $this->assertEquals(['Select','Insert','Update','References'], $field->options);
+        $this->assertEquals('utf8', $field->charset);
+        $this->assertEquals('', $field->default);
+
+        // 同时有charset和collate
+        $line = "  `community_desc` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '帖子描述',";
+        $field = $this->parser->detectPrefix(Parser::PREFIX_FIELD, $line);
+        $this->assertEquals('community_desc', $field->name);
+        $this->assertEquals(256, $field->length);
+        $this->assertEquals('utf8mb4', $field->charset);
+        $this->assertEquals('utf8mb4_unicode_ci', $field->collate);
+        $this->assertEquals('帖子描述', $field->comment);
+
+        // 乱码
+        $line = "  `auth_type` tinyint(1) unsigned NOT NULL COMMENT 'éªŒè¯<81>ç±»åž‹ 1 BasicéªŒè¯<81>',";
+        $field = $this->parser->detectPrefix(Parser::PREFIX_FIELD, $line);
+        $this->assertNotEquals(1, $field->length);
+        $this->assertEquals('éªŒè¯<81>ç±»åž‹ 1 BasicéªŒè¯<81>', $field->comment);
     }
 
     public function testParsePk()
@@ -163,6 +239,10 @@ class ParserTest extends TestCase
         $line = '  PRIMARY KEY (`uid`';
         $pks = $this->parser->detectPrefix(Parser::PREFIX_PK, $line);
         $this->assertNull($pks);
+
+        $line = '  PRIMARY KEY (`third_remark_id`) USING BTREE,';
+        $pks = $this->parser->detectPrefix(Parser::PREFIX_PK, $line);
+        $this->assertEquals(['third_remark_id'], $pks);
     }
 
     public function testParseIndex()
@@ -195,5 +275,16 @@ class ParserTest extends TestCase
         $line = ') 3ENGINE=InnoDB 3AUTO_INCREMENT=1100000 DEFAULT CHARSET=utf9;';
         $extra = $this->parser->detectPrefix(Parser::PREFIX_EXTRA, $line);
         $this->assertNull($extra);
+
+        $line = ') ENGINE=InnoDB AUTO_INCREMENT=1018 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;';
+        $extra = $this->parser->detectPrefix(Parser::PREFIX_EXTRA, $line);
+        $this->assertEquals('utf8', $extra->charset);
+        $this->assertEquals('utf8_bin', $extra->collate);
+
+        $line = ') ENGINE=InnoDB AUTO_INCREMENT=9688 DEFAULT CHARSET=utf8 COMMENT=\'婚礼请柬-用户创建的请帖管理\';';
+        $extra = $this->parser->detectPrefix(Parser::PREFIX_EXTRA, $line);
+        $this->assertEquals(9688, $extra->autoIncrement);
+        $this->assertEquals('utf8', $extra->charset);
+        $this->assertEquals('婚礼请柬-用户创建的请帖管理', $extra->comment);
     }
 }

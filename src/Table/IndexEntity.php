@@ -11,7 +11,7 @@ namespace Phpple\Altable\Table;
 
 /**
  * 索引对象
- * @see https://dev.mysql.com/doc/refman/5.5/en/create-index.html
+ * @see https://dev.mysql.com/doc/refman/5.6/en/create-index.html
  * @package Phpple\Altable\Table
  */
 class IndexEntity implements IEntity
@@ -32,4 +32,9 @@ class IndexEntity implements IEntity
      * @var bool 是否唯一
      */
     public $unique = false;
+
+    /**
+     * @var string 评论
+     */
+    public $comment;
 }
