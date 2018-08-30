@@ -34,7 +34,7 @@ $parser->dbFilters = [
     // foo.bar不予分析
     'foo' => ['bar'],
 ];
-$dbs = Phpple\Altable\Parser::parse(__DIR__.'/dump.sql');
+$dbs = $parser->parse(__DIR__.'/dump.sql');
 
 // 开始进行分析
 foreach($dbs as $db) {
