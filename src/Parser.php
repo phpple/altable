@@ -341,7 +341,7 @@ class Parser
      * @return IEntity
      * @throws \InvalidArgumentException parser.dbNameRequired
      */
-    public function findEntity($dbs, string $dbName, $tbName = '', $fieldName = '')
+    public function findEntity($dbs, $dbName, $tbName = '', $fieldName = '')
     {
         if (!$dbName) {
             throw new \InvalidArgumentException('parser.dbNameRequired');
