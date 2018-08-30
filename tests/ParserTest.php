@@ -12,6 +12,7 @@ namespace Phpple\Altable\Tests;
 use Phpple\Altable\Parser;
 use Phpple\Altable\Table\DbEntity;
 use Phpple\Altable\Table\ExtraEntity;
+use Phpple\Altable\Table\FieldEntity;
 use Phpple\Altable\Table\TableEntity;
 use PHPUnit\Framework\TestCase;
 
@@ -69,6 +70,48 @@ class ParserTest extends TestCase
         $this->assertTrue($dbs[0]->tables[0]->fields[8]->notNull);
         $this->assertContains('tinyint', $dbs[0]->tables[0]->fields[8]->type);
     }
+
+    public function testFind()
+    {
+        $dbName = 'phpple';
+        $tbName = 'u_user';
+        $fieldName = 'view_num';
+        $notexistName = 'xxsdfsdfsd';
+
+        $file = __DIR__ . '/dump.sql';
+        $dbs = $this->parser->parse($file);
+
+        try {
+            $this->parser->findEntity($dbs, '');
+        } catch (\InvalidArgumentException $ex) {
+            $this->assertEquals('parser.dbNameRequired', $ex->getMessage());
+        }
+
+        $db = $this->parser->findEntity($dbs, $notexistName);
+        $this->assertNull($db);
+
+        $db = $this->parser->findEntity($dbs, $dbName);
+        $this->assertInstanceOf(DbEntity::class, $db);
+        $this->assertEquals($dbName, $db->name);
+
+        $tb = $this->parser->findEntity($dbs, $notexistName, $notexistName);
+        $this->assertNull($tb);
+
+        $tb = $this->parser->findEntity($dbs, $dbName, $notexistName);
+        $this->assertNull($tb);
+
+        $tb = $this->parser->findEntity($dbs, $dbName, $tbName);
+        $this->assertInstanceOf(TableEntity::class, $tb);
+        $this->assertEquals($tbName, $tb->name);
+
+        $field = $this->parser->findEntity($dbs, $dbName, $tbName, $notexistName);
+        $this->assertNull($field);
+
+        $field = $this->parser->findEntity($dbs, $dbName, $tbName, $fieldName);
+        $this->assertInstanceOf(FieldEntity::class, $field);
+        $this->assertEquals($fieldName, $field->name);
+    }
+
 
     public function testParseDb()
     {
