@@ -29,17 +29,24 @@ class Parser
     const PREFIX_EXTRA = 'extra';
 
     const FIELD_PARSE_EXP = '#([a-zA-Z][a-zA-Z\_\-0-9]+)`' .    // 1:字段名称
-    '\s+(.+)\s+' .                                              // 2:字段类型
-    '((?:NOT\s*)?\s+NULL)' .                                    // 3:是否允许为null
-    '(\s+AUTO_INCREMENT)?' .                                    // 4:是否自增
-    '(?:\s+DEFAULT\s+\'?([0-9a-zA-Z\_\-]*)\'?)?' .               // 5:默认值
-    '(?:\s+COMMENT\s+\'(.+)\')?,$#'                           // 6:字段注释
+    '\s+([a-z]+)' .                                             // 2:字段类型
+    '(?:\(([^\)]+)\))?' .                                       // 3:字段长度
+    '(?:\s+(unsigned))?' .                                      // 4:是否无符号
+    '(?:\s+CHARACTER SET ([^\s]+))?'.                           // 5:编码
+    '(?:\s+COLLATE ([^\s]+))?'.                                 // 6:collate
+    '(\s+NOT)?\s+NULL' .                                        // 7:是否允许为null
+    '(\s+AUTO_INCREMENT)?' .                                    // 8:是否自增
+    '(?:\s+DEFAULT\s+([^\s]*))?' .                              // 9:默认值
+    '(?:\s+ON UPDATE ([^\s]+))?'.                               // 10:update更新内容
+    '(?:\s+COMMENT\s+\'(.+)\')?,$#'                             // 11:字段注释
     ;
 
     const EXTRA_PARSE_EXP = '#ENGINE=([^\s]+)' . // 1:Engine
     '(?:\s+AUTO_INCREMENT=(\d+))?' .             // 2:autoIncrement
-    '(?:\s+DEFAULT CHARSET=(\w+))?' .            // 3:charset
-    '(?:\s+COMMENT=\'(.+)\')?;#';                // 4:comment
+    '(?:\s+DEFAULT CHARSET=([^\s]+))?' .         // 3:charset
+    '(?:\s+COLLATE=([^\s]+))?'.                  // 4:collate
+    '(?:\s+COMMENT=\'(.+)\')?'.                  // 5.comment
+    ';#';                // 4:comment
 
     /**
      * 特殊的前缀
@@ -70,9 +77,9 @@ class Parser
 
     /**
      * 解析某种关键字
-     * @param $key
-     * @param $line
-     * @return DbEntity|null
+     * @param string $key
+     * @param string $line
+     * @return IEntity|null
      */
     public function detectPrefix($key, $line)
     {
@@ -88,7 +95,7 @@ class Parser
 
     /**
      * 解析DB名
-     * @param $line
+     * @param string $line
      * @return null|string
      */
     public function parseDb($line)
@@ -102,7 +109,7 @@ class Parser
 
     /**
      * 解析TABLE名称
-     * @param $line
+     * @param string $line
      * @return null|string
      */
     public function parseTable($line)
@@ -116,19 +123,52 @@ class Parser
 
     /**
      * 解析字段名称
-     * @param $line
+     * @param string $line
      * @return FieldEntity|null
      */
     public function parseField($line)
     {
+//        preg_match('#([a-zA-Z][a-zA-Z\_\-0-9]+)`' .    // 1:字段名称
+//            '\s+([a-z]+)' .                                             // 2:字段类型
+//            '(?:\(([^\)]+)\))?' .                                       // 3:字段长度
+//            '(?:\s+(unsigned))?' .                                      // 4:是否无符号
+//            '(?:\s+CHARACTER SET ([^\s]+))?'.                           // 5:编码
+//            '(?:\s+COLLATE ([^\s]+))?'.                                 // 6:collate
+//            '(\s+NOT)?\s+NULL' .                                        // 7:是否允许为null
+//            '(\s+AUTO_INCREMENT)?' .                                    // 8:是否自增
+//            '(?:\s+DEFAULT\s+([^\s]*))?' .                              // 9:默认值
+//            '(?:\s+ON UPDATE ([^\s]+))?'.                               // 10:update更新内容
+//            '(?:\s+COMMENT\s+\'(.+)\')?,$#'                             // 11:字段注释
+//        ,$line, $ms);
+//        var_dump($line,$ms);die();
         if (preg_match(self::FIELD_PARSE_EXP, $line, $ms)) {
             $fieldEntity = new FieldEntity();
             $fieldEntity->name = $ms[1];
             $fieldEntity->type = $ms[2];
-            $fieldEntity->notNull = strpos($ms[3], 'NOT') !== false;
-            $fieldEntity->autoIncrement = !empty($ms[4]);
-            $fieldEntity->default = isset($ms[5]) ? $ms[5] : null;
-            $fieldEntity->comment = isset($ms[6]) ? $ms[6] : null;
+            // 如果是int现关类型，后面的长度没有意义
+            // @see https://dev.mysql.com/doc/refman/5.6/en/integer-types.html
+            if (strpos($fieldEntity->type, 'int') !== false) {
+                $fieldEntity->length = 0;
+            } elseif ($fieldEntity->type == 'enum' || $fieldEntity->type == 'set') {
+                $options = explode(',', $ms[3]);
+                foreach ($options as $key => $option) {
+                    $options[$key] = trim($option, '\'');
+                }
+                $fieldEntity->options = $options;
+            } else {
+                // 如果是双精度，可能是DECIMAL(5,2)、DOUBLE(16,2)的样子
+                // @see https://dev.mysql.com/doc/refman/5.6/en/fixed-point-types.html
+                // @see https://dev.mysql.com/doc/refman/5.6/en/floating-point-types.html
+                $fieldEntity->length = isset($ms[3]) ? $ms[3] : 0;
+            }
+            $fieldEntity->unsigned = !empty($ms[4]);
+            $fieldEntity->charset = isset($ms[5]) ? $ms[5] : null;
+            $fieldEntity->collate = isset($ms[6]) ? $ms[6] : null;
+            $fieldEntity->notnull = !empty($ms[7]);
+            $fieldEntity->autoinc = !empty($ms[8]);
+            $fieldEntity->default = isset($ms[9]) ? trim($ms[9], "'") : null;
+            $fieldEntity->onupdate = isset($ms[10]) ? $ms[10] : null;
+            $fieldEntity->comment = isset($ms[11]) ? $ms[11] : null;
             return $fieldEntity;
         }
         return null;
@@ -137,7 +177,7 @@ class Parser
     /**
      * 解析主键
      * @example PRIMARY KEY (`tag_id`,`topic_id`,`type`)
-     * @param $line
+     * @param string $line
      * @return string[]|null
      */
     public function parsePk($line)
@@ -190,7 +230,9 @@ class Parser
 
     /**
      * 解析唯一索引
+     * @param string $line
      * @see Parser::parseIndex()
+     * @return null|IndexEntity
      */
     public function parseUniqueIndex($line)
     {
@@ -200,7 +242,7 @@ class Parser
     /**
      * 解析额外的信息，如engine、charset等
      * @example ) ENGINE=InnoDB AUTO_INCREMENT=210 DEFAULT CHARSET=utf8;
-     * @param $line
+     * @param string $line
      * @return ExtraEntity
      */
     public function parseExtra($line)
@@ -210,7 +252,8 @@ class Parser
             $extraEntity->engine = isset($ms[1]) ? $ms[1] : '';
             $extraEntity->autoIncrement = isset($ms[2]) ? intval($ms[2]) : 0;
             $extraEntity->charset = isset($ms[3]) ? $ms[3] : '';
-            $extraEntity->comment = isset($ms[4]) ? $ms[4] : '';
+            $extraEntity->collate = isset($ms[4]) ? $ms[4] : '';
+            $extraEntity->comment = isset($ms[5]) ? $ms[5] : '';
             return $extraEntity;
         }
         return null;
@@ -218,14 +261,17 @@ class Parser
 
 
     /**
-     * @param $file
+     * 解析SQL文件
+     * @param string $file
      * @return DbEntity[]
      */
     public function parse($file)
     {
+        if (!is_readable($file)) {
+            throw new \InvalidArgumentException('parser.fileNotReadable');
+        }
+
         $fh = fopen($file, 'r');
-        $dbname = '';
-        $tbName = '';
         $dbs = [];
         $dbEntity = null;
         $tableEntity = null;
@@ -280,9 +326,7 @@ class Parser
                 }
 
                 $tableEntity = new TableEntity();
-                $tableEntity->table = $tbName = $ret;
-                $tableEntity = new TableEntity();
-                $tableEntity->name = $ret;
+                $tableEntity->name = $tbName = $ret;
                 continue;
             }
             if ($ignoreTb) {
@@ -317,7 +361,7 @@ class Parser
 
             $ret = $this->detectPrefix(self::PREFIX_EXTRA, $line);
             if ($ret !== null) {
-                foreach (['charset', 'autoIncrement', 'engine', 'comment'] as $key) {
+                foreach (['charset', 'autoIncrement', 'engine', 'comment', 'collate'] as $key) {
                     $tableEntity->$key = $ret->$key;
                 }
                 $dbEntity->addTable($tableEntity);

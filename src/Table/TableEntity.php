@@ -9,10 +9,15 @@
 
 namespace Phpple\Altable\Table;
 
+/**
+ * 数据表解析类
+ * @see https://dev.mysql.com/doc/refman/5.6/en/create-table.html
+ * @package Phpple\Altable\Table
+ */
 class TableEntity implements IEntity
 {
     /**
-     * @var string
+     * @var string 名称
      */
     public $name;
     /**
@@ -20,7 +25,7 @@ class TableEntity implements IEntity
      */
     public $fields = [];
     /**
-     * @var string[]
+     * @var string[] 主键
      */
     public $pk = [];
     /**
@@ -29,21 +34,26 @@ class TableEntity implements IEntity
     public $indexes = [];
 
     /**
-     * @var string
+     * @var string 引擎
      */
-    public $comment;
+    public $engine;
     /**
-     * @var int
-     */
-    public $autoIncrement = 0;
-    /**
-     * @var string
+     * @var string 编码
      */
     public $charset;
     /**
-     * @var string
+     * @var string 校对集
      */
-    public $engine;
+    public $collate;
+
+    /**
+     * @var int 从哪个数自增
+     */
+    public $autoIncrement = 0;
+    /**
+     * @var string 评论
+     */
+    public $comment;
 
     /**
      * 添加字段
@@ -65,7 +75,7 @@ class TableEntity implements IEntity
         foreach ($fields as $field) {
             foreach ($this->fields as $f) {
                 if ($f->name == $field) {
-                    $f->primaryKey = true;
+                    $f->pk = true;
                 }
             }
         }
