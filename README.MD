@@ -2,10 +2,11 @@ Phpple Altable
 ================
 
 本项目用来对通过mysqldump出来的表结构数据进行解析，分析出数据库、数据表、字段、主键、索引等信息。
-[![Latest Stable Version](https://img.shields.io/packagist/v/phpple/altable.svg?style=flat-square)](https://packagist.org/packages/phpple/mysql)
-[![Minimum PHP Version](https://img.shields.io/badge/php-%3E%3D%207.0-8892BF.svg?style=flat-square)](https://php.net/)
-[![Build Status](https://img.shields.io/travis/phpple/altable/master.svg?style=flat-square)](https://travis-ci.org/phpple/mysql)
-[![codecov](https://codecov.io/gh/phpple/altable/branch/master/graph/badge.svg)](https://codecov.io/gh/phpple/mysql)
+
+[![Latest Stable Version](https://img.shields.io/packagist/v/phpple/altable.svg?style=flat-square)](https://packagist.org/packages/phpple/altable)
+[![Minimum PHP Version](https://img.shields.io/badge/php-%3E%3D%205.6-8892BF.svg?style=flat-square)](https://php.net/)
+[![Build Status](https://img.shields.io/travis/phpple/altable/master.svg?style=flat-square)](https://travis-ci.org/phpple/altable)
+[![codecov](https://codecov.io/gh/phpple/altable/branch/master/graph/badge.svg)](https://codecov.io/gh/phpple/altable)
 
 ## 使用步骤
 
