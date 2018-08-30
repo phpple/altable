@@ -31,6 +31,16 @@ class ParserTest extends TestCase
         $this->parser = new Parser();
     }
 
+    /**
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage parser.fileNotReadable
+     */
+    public function testFileNotReadable()
+    {
+        $file = __DIR__.'/notexisted.sql';
+        $this->parser->parse($file);
+    }
+
     public function testCompile()
     {
         $file = __DIR__ . '/dump.sql';
