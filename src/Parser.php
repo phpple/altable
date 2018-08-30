@@ -127,8 +127,8 @@ class Parser
             $fieldEntity->type = $ms[2];
             $fieldEntity->notNull = strpos($ms[3], 'NOT') !== false;
             $fieldEntity->autoIncrement = !empty($ms[4]);
-            $fieldEntity->default = $ms[5] ?? null;
-            $fieldEntity->comment = $ms[6] ?? '';
+            $fieldEntity->default = isset($ms[5]) ? $ms[5] : null;
+            $fieldEntity->comment = isset($ms[6]) ? $ms[6] : null;
             return $fieldEntity;
         }
         return null;
@@ -207,10 +207,10 @@ class Parser
     {
         if (preg_match(self::EXTRA_PARSE_EXP, $line, $ms)) {
             $extraEntity = new ExtraEntity();
-            $extraEntity->engine = $ms[1] ?? '';
-            $extraEntity->autoIncrement = $ms[2] ?? 0;
-            $extraEntity->charset = $ms[3] ?? '';
-            $extraEntity->comment = $ms[4] ?? '';
+            $extraEntity->engine = isset($ms[1]) ? $ms[1] : '';
+            $extraEntity->autoIncrement = isset($ms[2]) ? intval($ms[2]) : 0;
+            $extraEntity->charset = isset($ms[3]) ? $ms[3] : '';
+            $extraEntity->comment = isset($ms[4]) ? $ms[4] : '';
             return $extraEntity;
         }
         return null;
