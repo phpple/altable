@@ -9,7 +9,12 @@
 
 namespace Phpple\Altable\Table;
 
-class IndexEntity
+/**
+ * 索引对象
+ * @see https://dev.mysql.com/doc/refman/5.5/en/create-index.html
+ * @package Phpple\Altable\Table
+ */
+class IndexEntity implements IEntity
 {
     /**
      * @var string 名称

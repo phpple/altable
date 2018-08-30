@@ -9,7 +9,7 @@
 
 namespace Phpple\Altable\Table;
 
-class FieldEntity
+class FieldEntity implements IEntity
 {
     /**
      * @var string 名称

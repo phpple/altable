@@ -9,7 +9,7 @@
 
 namespace Phpple\Altable\Table;
 
-class DbEntity
+class DbEntity implements IEntity
 {
     /**
      * @var string

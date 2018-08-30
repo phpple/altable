@@ -9,7 +9,7 @@
 
 namespace Phpple\Altable\Table;
 
-class ExtraEntity
+class ExtraEntity implements IEntity
 {
     public $engine;
     public $charset;

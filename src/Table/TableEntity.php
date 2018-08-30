@@ -9,7 +9,7 @@
 
 namespace Phpple\Altable\Table;
 
-class TableEntity
+class TableEntity implements IEntity
 {
     /**
      * @var string
@@ -58,9 +58,9 @@ class TableEntity
 
     /**
      * 设置主键
-     * @param mixed ...$fields
+     * @param mixed $fields
      */
-    public function setPrimaryKeys(...$fields)
+    public function setPrimaryKeys($fields)
     {
         foreach ($fields as $field) {
             foreach ($this->fields as $f) {

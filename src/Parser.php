@@ -32,21 +32,21 @@ class Parser
     '\s+(.+)\s+' .                                              // 2:字段类型
     '((?:NOT\s*)?\s+NULL)' .                                    // 3:是否允许为null
     '(\s+AUTO_INCREMENT)?' .                                    // 4:是否自增
-    '(?:\s+DEFAULT\s+\'?([0-9a-zA-Z\_\-]+)\')?' .               // 5:默认值
+    '(?:\s+DEFAULT\s+\'?([0-9a-zA-Z\_\-]*)\'?)?' .               // 5:默认值
     '(?:\s+COMMENT\s+\'(.+)\')?,$#'                           // 6:字段注释
     ;
 
-    const EXTRA_PARSE_EXP = '#ENGINE=([^\s+])' . // 1:Engine
+    const EXTRA_PARSE_EXP = '#ENGINE=([^\s]+)' . // 1:Engine
     '(?:\s+AUTO_INCREMENT=(\d+))?' .             // 2:autoIncrement
     '(?:\s+DEFAULT CHARSET=(\w+))?' .            // 3:charset
-    '(?:COMMENT=\'(.+)\')?;#';                  // 4:comment
+    '(?:\s+COMMENT=\'(.+)\')?;#';                // 4:comment
 
     /**
      * 特殊的前缀
      * @var array
      */
     private static $specialPrefixes = [
-        self::PREFIX_DB => 'CREATE DATABASE /*!32312 IF NOT EXISTS*/ `',
+        self::PREFIX_DB => 'USE `',
         self::PREFIX_TABLE => 'CREATE TABLE `',
         self::PREFIX_FIELD => '  `',
         self::PREFIX_PK => '  PRIMARY KEY (',
@@ -72,9 +72,9 @@ class Parser
      * 解析某种关键字
      * @param $key
      * @param $line
-     * @return mixed|null
+     * @return DbEntity|null
      */
-    private function detectPrefix($key, $line)
+    public function detectPrefix($key, $line)
     {
         $prefix = self::$specialPrefixes[$key];
         $len = self::$specialPrefixLens[$key];
@@ -181,8 +181,8 @@ class Parser
         }
         $indexEntity->fields = $fields;
 
-        if (strpos(substr($line, $rightPos + 1), ' BTREE') !== false) {
-            $indexEntity->type = 'btree';
+        if (preg_match('#USING (BTREE|HASH)#', substr($line, $rightPos+1), $ms)) {
+            $indexEntity->type = $ms[1];
         }
         $indexEntity->unique = $unique;
         return $indexEntity;
@@ -201,6 +201,7 @@ class Parser
      * 解析额外的信息，如engine、charset等
      * @example ) ENGINE=InnoDB AUTO_INCREMENT=210 DEFAULT CHARSET=utf8;
      * @param $line
+     * @return ExtraEntity
      */
     public function parseExtra($line)
     {
@@ -210,7 +211,9 @@ class Parser
             $extraEntity->autoIncrement = $ms[2] ?? 0;
             $extraEntity->charset = $ms[3] ?? '';
             $extraEntity->comment = $ms[4] ?? '';
+            return $extraEntity;
         }
+        return null;
     }
 
 
@@ -240,10 +243,11 @@ class Parser
             //记录库名
             $ret = $this->detectPrefix(self::PREFIX_DB, $line);
             if ($ret !== null) {
+                $dbname = $ret;
                 // 如果在需要被过滤的db名称，则不予处理
                 // 如果值为null，表示此库全部过滤
                 if ($dbname
-                    && isset($this->dbFilters[$dbname])
+                    && array_key_exists($dbname, $this->dbFilters)
                     && $this->dbFilters[$dbname] === null) {
                     $ignoreDb = true;
                     continue;
@@ -263,6 +267,7 @@ class Parser
             //记录表名
             $ret = $this->detectPrefix(self::PREFIX_TABLE, $line);
             if ($ret !== null) {
+                $tbName = $ret;
                 // 过滤需要处理的table
                 if ($dbname
                     && $tbName
@@ -278,7 +283,6 @@ class Parser
                 $tableEntity->table = $tbName = $ret;
                 $tableEntity = new TableEntity();
                 $tableEntity->name = $ret;
-                $dbEntity->addTable($tableEntity);
                 continue;
             }
             if ($ignoreTb) {
@@ -316,8 +320,7 @@ class Parser
                 foreach (['charset', 'autoIncrement', 'engine', 'comment'] as $key) {
                     $tableEntity->$key = $ret->$key;
                 }
-                $dbs[] = $tableEntity;
-                $tableEntity = new TableEntity();
+                $dbEntity->addTable($tableEntity);
                 continue;
             }
         }
