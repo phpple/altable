@@ -6,9 +6,11 @@
  * @copyright: 2018@hunbasha.com
  * @filesource: Structure.php
  */
+
 namespace Phpple\Altable;
 
 use Phpple\Altable\Table\DbEntity;
+use Phpple\Altable\Table\IEntity;
 use Phpple\Altable\Table\TableEntity;
 use Phpple\Altable\Table\ExtraEntity;
 use Phpple\Altable\Table\IndexEntity;
@@ -17,8 +19,6 @@ use Phpple\Altable\Table\FieldEntity;
 class Parser
 {
     public $dbFilters = [];
-
-    const DB_PREFIX = 'CREATE DATABASE /*!32312 IF NOT EXISTS*/ `';
 
     const PREFIX_DB = 'db';
     const PREFIX_TABLE = 'table';
@@ -181,7 +181,7 @@ class Parser
         }
         $indexEntity->fields = $fields;
 
-        if (preg_match('#USING (BTREE|HASH)#', substr($line, $rightPos+1), $ms)) {
+        if (preg_match('#USING (BTREE|HASH)#', substr($line, $rightPos + 1), $ms)) {
             $indexEntity->type = $ms[1];
         }
         $indexEntity->unique = $unique;
@@ -326,5 +326,56 @@ class Parser
         }
         fclose($fh);
         return $dbs;
+    }
+
+    /**
+     * 根据名称找到对象
+     * @param DbEntity[] $dbs
+     * @param string $dbName
+     * @param string $tbName
+     * @param string $fieldName
+     * @example
+     * 找DbEntity: ->listEntity($dbs, $dbName)
+     * 找TableEntity: ->listEntity($dbs, $dbName, $tbName)
+     * 找FieldEntity: ->listEntity($dbs, $dbName, $tbName, $fieldName)
+     * @return IEntity
+     * @throws \InvalidArgumentException parser.dbNameRequired
+     */
+    public function findEntity($dbs, $dbName, $tbName = '', $fieldName = '')
+    {
+        if (!$dbName) {
+            throw new \InvalidArgumentException('parser.dbNameRequired');
+        }
+        // 查找db
+        $foundDb = null;
+        foreach ($dbs as $db) {
+            if ($db->name == $dbName) {
+                $foundDb = $db;
+                break;
+            }
+        }
+        if (!$foundDb || !$tbName) {
+            return $foundDb;
+        }
+
+        // 查找table
+        $foundTb = null;
+        foreach ($foundDb->tables as $table) {
+            if ($table->name == $tbName) {
+                $foundTb = $table;
+                break;
+            }
+        }
+        if (!$foundTb || !$fieldName) {
+            return $foundTb;
+        }
+
+        // 查找field
+        foreach ($foundTb->fields as $field) {
+            if ($field->name == $fieldName) {
+                return $field;
+            }
+        }
+        return null;
     }
 }

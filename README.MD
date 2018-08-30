@@ -46,4 +46,13 @@ foreach($dbs as $db) {
         }
     }
 }
+
+// 通过名称查找名称为foo的DB
+$parser->find($dbs, 'foo');
+
+// 通过名称查找名称为foo.bar的Table
+$parser->find($dbs, 'foo', 'bar');
+
+// 通过名称查找表foo.bar里的字段uid
+$parser->find($dbs, 'foo', 'bar', 'uid');
 ```
