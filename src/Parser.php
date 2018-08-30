@@ -128,19 +128,6 @@ class Parser
      */
     public function parseField($line)
     {
-//        preg_match('#([a-zA-Z][a-zA-Z\_\-0-9]+)`' .    // 1:字段名称
-//            '\s+([a-z]+)' .                                             // 2:字段类型
-//            '(?:\(([^\)]+)\))?' .                                       // 3:字段长度
-//            '(?:\s+(unsigned))?' .                                      // 4:是否无符号
-//            '(?:\s+CHARACTER SET ([^\s]+))?'.                           // 5:编码
-//            '(?:\s+COLLATE ([^\s]+))?'.                                 // 6:collate
-//            '(\s+NOT)?\s+NULL' .                                        // 7:是否允许为null
-//            '(\s+AUTO_INCREMENT)?' .                                    // 8:是否自增
-//            '(?:\s+DEFAULT\s+([^\s]*))?' .                              // 9:默认值
-//            '(?:\s+ON UPDATE ([^\s]+))?'.                               // 10:update更新内容
-//            '(?:\s+COMMENT\s+\'(.+)\')?,$#'                             // 11:字段注释
-//        ,$line, $ms);
-//        var_dump($line,$ms);die();
         if (preg_match(self::FIELD_PARSE_EXP, $line, $ms)) {
             $fieldEntity = new FieldEntity();
             $fieldEntity->name = $ms[1];
