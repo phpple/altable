@@ -34,7 +34,7 @@ class Parser
     '(?:\s+(unsigned))?' .                                      // 4:是否无符号
     '(?:\s+CHARACTER SET ([^\s]+))?'.                           // 5:编码
     '(?:\s+COLLATE ([^\s]+))?'.                                 // 6:collate
-    '(\s+NOT)?\s+NULL' .                                        // 7:是否允许为null
+    '(?:(\s+NOT)?\s+NULL)?' .                                   // 7:是否允许为null
     '(\s+AUTO_INCREMENT)?' .                                    // 8:是否自增
     '(?:\s+DEFAULT\s+([^\s]*))?' .                              // 9:默认值
     '(?:\s+ON UPDATE ([^\s]+))?'.                               // 10:update更新内容

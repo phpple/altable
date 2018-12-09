@@ -287,4 +287,16 @@ class ParserTest extends TestCase
         $this->assertEquals('utf8', $extra->charset);
         $this->assertEquals('婚礼请柬-用户创建的请帖管理', $extra->comment);
     }
+
+    /**
+     * 如果一个字段是默认的null，会出现解析错误
+     */
+    public function testDefaultNull()
+    {
+        $line = '  `name_ab` varchar(100) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT \'校区简称\',';
+        $field = $this->parser->detectPrefix(Parser::PREFIX_FIELD, $line);
+        $this->assertNotNull($field);
+        $this->assertEquals('NULL', $field->default);
+        $this->assertFalse($field->notnull);
+    }
 }
