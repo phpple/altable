@@ -36,9 +36,9 @@ class Parser
     '(?:\s+COLLATE ([^\s]+))?'.                                 // 6:collate
     '(?:(\s+NOT)?\s+NULL)?' .                                   // 7:是否允许为null
     '(\s+AUTO_INCREMENT)?' .                                    // 8:是否自增
-    '(?:\s+DEFAULT\s+([^\s]*))?' .                              // 9:默认值
-    '(?:\s+ON UPDATE ([^\s]+))?'.                               // 10:update更新内容
-    '(?:\s+COMMENT\s+\'(.+)\')?,$#'                             // 11:字段注释
+    '(?:\s+DEFAULT\s+([^\s,]*))?' .                              // 9:默认值
+    '(?:\s+ON UPDATE ([^\s,]+))?'.                               // 10:update更新内容
+    '(?:\s+COMMENT\s+\'(.+)\')?,?$#'                             // 11:字段注释
     ;
 
     const EXTRA_PARSE_EXP = '#ENGINE=([^\s]+)' . // 1:Engine

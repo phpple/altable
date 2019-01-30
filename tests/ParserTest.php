@@ -220,6 +220,10 @@ class ParserTest extends TestCase
         $field = $this->parser->detectPrefix(Parser::PREFIX_FIELD, $line);
         $this->assertNotEquals(1, $field->length);
         $this->assertEquals('éªŒè¯<81>ç±»åž‹ 1 BasicéªŒè¯<81>', $field->comment);
+
+        $line = "  `campus_name_new` varchar(100) NOT NULL DEFAULT '' COMMENT '教学中心名称'";
+        $field = $this->parser->detectPrefix(Parser::PREFIX_FIELD, $line);
+        $this->assertEquals('campus_name_new', $field->name);
     }
 
     public function testParsePk()
