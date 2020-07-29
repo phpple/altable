@@ -265,6 +265,7 @@ class Parser
 
         $ignoreDb = false;
         $ignoreTb = false;
+        $dbNames = [];
 
         while (($line = fgets($fh)) !== false) {
             $line = rtrim($line);
@@ -288,12 +289,19 @@ class Parser
                     $ignoreDb = false;
                 }
 
+                if (isset($dbNames[$ret])) {
+                    $dbEntity = null;
+                    continue;
+                }
+
+                // 检查是否已经有过该库
                 $dbEntity = new DbEntity();
                 $dbEntity->name = $ret;
                 $dbs[] = $dbEntity;
+                $dbNames[$ret] = true;
                 continue;
             }
-            if ($ignoreDb) {
+            if ($ignoreDb || !$dbEntity) {
                 continue;
             }
 
