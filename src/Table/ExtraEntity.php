@@ -32,4 +32,9 @@ class ExtraEntity implements IEntity
      * @var string 评论
      */
     public $comment;
+
+    /**
+     * @var string 行格式
+     */
+    public $rowFormat;
 }

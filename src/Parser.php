@@ -45,8 +45,9 @@ class Parser
     '(?:\s+AUTO_INCREMENT=(\d+))?' .             // 2:autoIncrement
     '(?:\s+DEFAULT CHARSET=([^\s]+))?' .         // 3:charset
     '(?:\s+COLLATE=([^\s]+))?'.                  // 4:collate
-    '(?:\s+COMMENT=\'(.+)\')?'.                  // 5.comment
-    ';#';                // 4:comment
+    '(?:\s+ROW_FORMAT=([^\s]+))?'.               // 5:rowFormat
+    '(?:\s+COMMENT=\'(.+)\')?'.                  // 6.comment
+    ';#';                                        // 7:comment
 
     /**
      * 特殊的前缀
@@ -240,7 +241,8 @@ class Parser
             $extraEntity->autoIncrement = isset($ms[2]) ? intval($ms[2]) : 0;
             $extraEntity->charset = isset($ms[3]) ? $ms[3] : '';
             $extraEntity->collate = isset($ms[4]) ? $ms[4] : '';
-            $extraEntity->comment = isset($ms[5]) ? $ms[5] : '';
+            $extraEntity->rowFormat = isset($ms[5]) ? $ms[5] : '';
+            $extraEntity->comment = isset($ms[6]) ? $ms[6] : '';
             return $extraEntity;
         }
         return null;

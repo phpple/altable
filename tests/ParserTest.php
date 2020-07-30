@@ -282,14 +282,23 @@ class ParserTest extends TestCase
 
         $line = ') ENGINE=InnoDB AUTO_INCREMENT=1018 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;';
         $extra = $this->parser->detectPrefix(Parser::PREFIX_EXTRA, $line);
+        $this->assertNotNull($extra);
         $this->assertEquals('utf8', $extra->charset);
         $this->assertEquals('utf8_bin', $extra->collate);
 
         $line = ') ENGINE=InnoDB AUTO_INCREMENT=9688 DEFAULT CHARSET=utf8 COMMENT=\'婚礼请柬-用户创建的请帖管理\';';
         $extra = $this->parser->detectPrefix(Parser::PREFIX_EXTRA, $line);
+        $this->assertNotNull($extra);
         $this->assertEquals(9688, $extra->autoIncrement);
         $this->assertEquals('utf8', $extra->charset);
         $this->assertEquals('婚礼请柬-用户创建的请帖管理', $extra->comment);
+
+        $line = ') ENGINE=InnoDB AUTO_INCREMENT=252912 DEFAULT CHARSET=utf8 ROW_FORMAT=COMPACT COMMENT=\'员工信息历史记录表\';';
+        $extra = $this->parser->detectPrefix(Parser::PREFIX_EXTRA, $line);
+        $this->assertNotNull($extra);
+        $this->assertEquals(252912, $extra->autoIncrement);
+        $this->assertEquals('utf8', $extra->charset);
+        $this->assertEquals('COMPACT', $extra->rowFormat);
     }
 
     /**
