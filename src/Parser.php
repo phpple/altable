@@ -32,13 +32,13 @@ class Parser
     '\s+([a-z]+)' .                                             // 2:字段类型
     '(?:\(([^\)]+)\))?' .                                       // 3:字段长度
     '(?:\s+(unsigned))?' .                                      // 4:是否无符号
-    '(?:\s+CHARACTER SET ([^\s]+))?'.                           // 5:编码
-    '(?:\s+COLLATE ([^\s]+))?'.                                 // 6:collate
+    '(?:\s+CHARACTER\s+SET\s+([^\s]+))?'.                       // 5:编码
+    '(?:\s+COLLATE\s+([^\s]+))?'.                               // 6:collate
     '(?:(\s+NOT)?\s+NULL)?' .                                   // 7:是否允许为null
     '(\s+AUTO_INCREMENT)?' .                                    // 8:是否自增
-    '(?:\s+DEFAULT\s+([^\s,]*))?' .                              // 9:默认值
-    '(?:\s+ON UPDATE ([^\s,]+))?'.                               // 10:update更新内容
-    '(?:\s+COMMENT\s+\'(.+)\')?,?$#'                             // 11:字段注释
+    '(?:\s+DEFAULT\s+(\'[^\']*\'|[^\'\s\b]+))?' .               // 9:默认值x
+    '(?:\s+ON\s+UPDATE\s+([^\s,]+))?'.                          // 10:update更新内容
+    '(?:\s+COMMENT\s+\'(.+)\')?,?$#'                            // 11:字段注释
     ;
 
     const EXTRA_PARSE_EXP = '#ENGINE=([^\s]+)' . // 1:Engine

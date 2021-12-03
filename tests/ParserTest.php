@@ -193,6 +193,7 @@ class ParserTest extends TestCase
         // enum类型
         $line = "  `ssl_type` enum('','ANY','X509','SPECIFIED') CHARACTER SET utf8 NOT NULL DEFAULT '',";
         $field = $this->parser->detectPrefix(Parser::PREFIX_FIELD, $line);
+        $this->assertNotNull($field);
         $this->assertEquals('enum', $field->type);
         $this->assertEquals(['', 'ANY', 'X509', 'SPECIFIED'], $field->options);
         $this->assertEquals('utf8', $field->charset);
@@ -224,6 +225,13 @@ class ParserTest extends TestCase
         $line = "  `campus_name_new` varchar(100) NOT NULL DEFAULT '' COMMENT '教学中心名称'";
         $field = $this->parser->detectPrefix(Parser::PREFIX_FIELD, $line);
         $this->assertEquals('campus_name_new', $field->name);
+
+        // 默认值有空格
+        $line = '  `sub_item_date` datetime NOT NULL DEFAULT \'0000-00-00 00:00:00\' COMMENT \'购物时间\',';
+        $field = $this->parser->detectPrefix(Parser::PREFIX_FIELD, $line);
+        $this->assertNotNull($field);
+        $this->assertEquals('sub_item_date', $field->name);
+        $this->assertEquals('0000-00-00 00:00:00', $field->default);
     }
 
     public function testParsePk()
